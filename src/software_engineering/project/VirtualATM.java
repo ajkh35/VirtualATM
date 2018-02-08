@@ -9,12 +9,15 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 /**
@@ -23,6 +26,8 @@ import javax.swing.JOptionPane;
  */
 public class VirtualATM extends javax.swing.JFrame {
 
+    private ActionListener OkListener;
+    
     /**
      * Creates new form VirtualATM
      */
@@ -72,7 +77,8 @@ public class VirtualATM extends javax.swing.JFrame {
         setKeypadListeners();
         
         // Ok press listener
-        ok.addActionListener(new ActionListener(){
+        ok.removeActionListener(OkListener);
+        OkListener = new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
                 String str = jTextField1.getText();
@@ -86,7 +92,8 @@ public class VirtualATM extends javax.swing.JFrame {
                     cancel.doClick();
                 }
             }
-        });
+        };
+        ok.addActionListener(OkListener);
     }
     
     // Verification of ATM PIN
@@ -291,6 +298,176 @@ public class VirtualATM extends javax.swing.JFrame {
         jLabel5.setText("Account Balance");
         jLabel6.setText("Change PIN");
         jLabel7.setText("FastCash");
+        
+        setupWithdraw();
+    }
+    
+    // user withdraws money
+    private void setupWithdraw(){
+        
+        jButton1.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                
+                jLabel4.setText("Current");
+                jLabel5.setText("Savings");
+                jLabel1.setVisible(false);
+                jLabel2.setVisible(false);
+                jLabel6.setVisible(false);
+                jLabel7.setVisible(false);
+                
+                jButton4.addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        jLabel4.setVisible(false);
+                        jLabel5.setVisible(false);
+                        jTextField1.setVisible(true);
+                        jTextField1.setText("");
+                        jLabel3.setVisible(true);
+                        jLabel3.setText("Enter the amount:");
+                        ok.removeActionListener(OkListener);
+                        
+                        OkListener = new ActionListener(){
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                if(!jTextField1.getText().equals("")){
+                                    long amt = Long.parseLong(jTextField1.getText());
+                                    Date date = new Date(new java.util.Date().getTime());
+                                    int type = 1;
+                                    Transaction trans = new Transaction(date,amt,type);
+//                                    trans.setID(saveTransaction(trans));
+                                    JOptionPane.showMessageDialog(null,
+                                            "Amount: "+trans.getAmount()
+                                            ,String.valueOf(trans.getDate())
+                                            ,JOptionPane.INFORMATION_MESSAGE);
+                                }else{
+                                    JOptionPane.showMessageDialog(null,"Please enter an amount");
+                                }
+                            }
+                        };
+                        ok.addActionListener(OkListener);
+                        cancel.doClick();
+                    }
+                });
+                
+                jButton5.addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        jLabel4.setVisible(false);
+                        jLabel5.setVisible(false);
+                        jTextField1.setVisible(true);
+                        jTextField1.setText("");
+                        jLabel3.setVisible(true);
+                        jLabel3.setText("Enter the amount:");
+                        ok.removeActionListener(OkListener);
+                        
+                        OkListener = new ActionListener(){
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                if(!jTextField1.getText().equals("")){
+                                    long amt = Long.parseLong(jTextField1.getText());
+                                    Date date = new Date(new java.util.Date().getTime());
+                                    int type = 1;
+                                    Transaction trans = new Transaction(date,amt,type);
+//                                    trans.setID(saveTransaction(trans));
+                                    JOptionPane.showMessageDialog(null,
+                                            "Amount: "+trans.getAmount()
+                                            ,String.valueOf(trans.getDate())
+                                            ,JOptionPane.INFORMATION_MESSAGE);
+                                }else{
+                                    JOptionPane.showMessageDialog(null,"Please enter an amount");
+                                }
+                            }
+                        };
+                        ok.addActionListener(OkListener);
+                        
+                        cancel.doClick();
+                    }
+                });
+            }
+        });
+    }
+    
+    // user deposits money
+    private void setupDeposit(){
+        
+        jButton2.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jLabel1.setVisible(false);
+                jLabel2.setVisible(false);
+                jLabel4.setVisible(false);
+                jLabel5.setVisible(false);
+                jLabel6.setVisible(false);
+                jLabel7.setVisible(false);
+                jTextField1.setText("");
+                jTextField1.setVisible(true);
+                jLabel3.setVisible(true);
+                jLabel3.setText("Enter the amount");
+            }
+        });
+        
+        depositSlot.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+               if(jTextField1.getText().equals(""))
+                   JOptionPane.showMessageDialog(null,"Please enter an amount");
+               else{
+                   updateBalance(Long.parseLong(jTextField1.getText()));
+               }
+            }
+        });
+    }
+    
+    private void updateBalance(Long amount){
+        
+        Connection con = null;
+        try {  
+            con = DriverManager.getConnection(  
+                    "jdbc:mysql://localhost:3306/virtualatm","root","password");
+            Statement stmt = con.createStatement();  
+            stmt.executeUpdate("update UserBankAccount set balance = balance + "+amount);
+            con.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(VirtualATM.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+    }
+    
+    
+    // pop up window
+    private JFrame getPopup(Transaction trans){
+        JFrame frame = new JFrame();
+        frame.setSize(200,200);
+        
+        JLabel amount = new JLabel();
+        amount.setText(String.valueOf(trans.getAmount()));
+        JLabel date = new JLabel();
+        date.setText(String.valueOf(trans.getDate()));
+        JLabel id = new JLabel();
+        id.setText(String.valueOf(trans.getID()));
+        frame.add(amount);
+        frame.add(date);
+        frame.add(id);
+        return frame;
+    }
+    
+    // save transaction to database
+    private int saveTransaction(Transaction trans){
+        int id=0;
+        Connection con = null;
+        try {  
+            con = DriverManager.getConnection(  
+                    "jdbc:mysql://localhost:3306/virtualatm","root","password");
+            Statement stmt = con.createStatement();  
+            id = stmt.executeUpdate("insert into Transaction values("
+                    +trans.getDate()+","+trans.getAmount()+","+trans.getType()+")");  
+            con.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(VirtualATM.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return id;
     }
     
     /**
