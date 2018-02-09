@@ -24,9 +24,10 @@ import javax.swing.JOptionPane;
  *
  * @author ajay
  */
-public class VirtualATM extends javax.swing.JFrame {
+public class VirtualATM extends javax.swing.JFrame{
 
     private ActionListener OkListener;
+    private User mUser;
     
     /**
      * Creates new form VirtualATM
@@ -53,6 +54,14 @@ public class VirtualATM extends javax.swing.JFrame {
                 jLabel5.setVisible(false);
                 jLabel6.setVisible(false);
                 jLabel7.setVisible(false);
+                jTextField1.setText("");
+                jButton1.removeAll();
+                jButton2.removeAll();
+                jButton4.removeAll();
+                jButton5.removeAll();
+                jButton6.removeAll();
+                jButton7.removeAll();
+                ok.removeAll();
             }
         });
         
@@ -109,6 +118,7 @@ public class VirtualATM extends javax.swing.JFrame {
                     .executeQuery("select * from UserBankAccount where user_pin = "+str);  
             if(rs.next()){
                 result = rs.getMetaData().getColumnCount() > 0;
+                mUser = UserDao.getUser(Integer.parseInt(str));
             }
             con.close();
         } catch (SQLException ex) {
@@ -130,11 +140,17 @@ public class VirtualATM extends javax.swing.JFrame {
         jLabel6.setText("");
         jLabel7.setText("");
         jButton1.setText("");
+        jButton1.setActionCommand("withdraw");
         jButton2.setText("");
-        jButton3.setText("");
+        jButton2.setActionCommand("deposit");
         jButton4.setText("");
+        jButton4.setActionCommand("paybill");
         jButton5.setText("");
+        jButton5.setActionCommand("accountbalance");
         jButton6.setText("");
+        jButton6.setActionCommand("changepin");
+        jButton7.setText("");
+        jButton7.setActionCommand("fastcash");
         cancel.setText("Cancel");
         cancel.setForeground(Color.RED);
         cancel.setBackground(Color.WHITE);
@@ -299,12 +315,23 @@ public class VirtualATM extends javax.swing.JFrame {
         jLabel6.setText("Change PIN");
         jLabel7.setText("FastCash");
         
+        // User withdraws money
         setupWithdraw();
+        
+        // User deposits money
+        setupDeposit();
+        
+        // User pays the bill
+        setupBillPayment();
+        
+        //User checks balance
+        setupBalanceCheck();
     }
     
     // user withdraws money
     private void setupWithdraw(){
         
+        jButton1.removeAll();
         jButton1.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -316,6 +343,7 @@ public class VirtualATM extends javax.swing.JFrame {
                 jLabel6.setVisible(false);
                 jLabel7.setVisible(false);
                 
+                jButton4.removeAll();
                 jButton4.addActionListener(new ActionListener(){
                     @Override
                     public void actionPerformed(ActionEvent e) {
@@ -340,17 +368,88 @@ public class VirtualATM extends javax.swing.JFrame {
                                             "Amount: "+trans.getAmount()
                                             ,String.valueOf(trans.getDate())
                                             ,JOptionPane.INFORMATION_MESSAGE);
+                                    try {
+                                        UserDao.updateBalanceWithdrawal(mUser.getAccountNumber()
+                                                ,amt,"Current");
+                                    } catch (SQLException ex) {
+                                        Logger.getLogger(VirtualATM.class.getName())
+                                                .log(Level.SEVERE, null, ex);
+                                    }
                                 }else{
                                     JOptionPane.showMessageDialog(null,"Please enter an amount");
                                 }
+                                cancel.doClick();
                             }
                         };
                         ok.addActionListener(OkListener);
-                        cancel.doClick();
                     }
                 });
                 
+                jButton5.removeAll();
                 jButton5.addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        jLabel4.setVisible(false);
+                        jLabel5.setVisible(false);
+                        jTextField1.setVisible(true);
+                        jTextField1.setText("");
+                        jLabel3.setVisible(true);
+                        jLabel3.setText("Enter the amount:");
+                        ok.removeActionListener(OkListener);
+                        
+                        OkListener = new ActionListener(){
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                if(!jTextField1.getText().equals("")){
+                                    if(mUser.getMonthlyTransactions() >= 6){
+                                        JOptionPane.showMessageDialog(null,
+                                                "Monthly Transactions depleted");
+                                    }else{
+                                        long amt = Long.parseLong(jTextField1.getText());
+                                        Date date = new Date(new java.util.Date().getTime());
+                                        int type = 1;
+                                        Transaction trans = new Transaction(date,amt,type);
+    //                                    trans.setID(saveTransaction(trans));
+                                        JOptionPane.showMessageDialog(null,
+                                                "Amount: "+trans.getAmount()
+                                                ,String.valueOf(trans.getDate())
+                                                ,JOptionPane.INFORMATION_MESSAGE);
+                                        try {
+                                            UserDao.updateBalanceWithdrawal(mUser.getAccountNumber()
+                                                    ,amt,"Savings");
+                                        } catch (SQLException ex) {
+                                            Logger.getLogger(VirtualATM.class.getName())
+                                                    .log(Level.SEVERE, null, ex);
+                                        }
+                                    }
+                                }else{
+                                    JOptionPane.showMessageDialog(null,"Please enter an amount");
+                                }
+                                cancel.doClick();
+                            }
+                        };
+                        ok.addActionListener(OkListener);
+                    }
+                });
+            }
+        });
+    }
+    
+    // user deposits money
+    private void setupDeposit(){
+        
+        jButton2.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jLabel4.setText("Current");
+                jLabel5.setText("Savings");
+                jLabel1.setVisible(false);
+                jLabel2.setVisible(false);
+                jLabel6.setVisible(false);
+                jLabel7.setVisible(false);
+                
+                jButton4.removeAll();
+                jButton4.addActionListener(new ActionListener(){
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         jLabel4.setVisible(false);
@@ -374,66 +473,242 @@ public class VirtualATM extends javax.swing.JFrame {
                                             "Amount: "+trans.getAmount()
                                             ,String.valueOf(trans.getDate())
                                             ,JOptionPane.INFORMATION_MESSAGE);
+                                    try {
+                                        UserDao.updateBalanceDeposit(mUser.getAccountNumber()
+                                                ,amt,"Current");
+                                    } catch (SQLException ex) {
+                                        Logger.getLogger(VirtualATM.class.getName())
+                                                .log(Level.SEVERE, null, ex);
+                                    }
                                 }else{
                                     JOptionPane.showMessageDialog(null,"Please enter an amount");
                                 }
+                                
+                                welcome.setVisible(true);
+                                
                             }
                         };
                         ok.addActionListener(OkListener);
+                    }
+                });
+                
+                jButton5.removeAll();
+                jButton5.addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        jLabel4.setVisible(false);
+                        jLabel5.setVisible(false);
+                        jTextField1.setVisible(true);
+                        jTextField1.setText("");
+                        jLabel3.setVisible(true);
+                        jLabel3.setText("Enter the amount:");
+                        ok.removeActionListener(OkListener);
                         
-                        cancel.doClick();
+                        OkListener = new ActionListener(){
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                if(!jTextField1.getText().equals("")){
+                                    if(mUser.getMonthlyTransactions() >= 6){
+                                        JOptionPane.showMessageDialog(null,
+                                                "Monthly Transactions depleted");
+                                    }else{
+                                        long amt = Long.parseLong(jTextField1.getText());
+                                        Date date = new Date(new java.util.Date().getTime());
+                                        int type = 1;
+                                        Transaction trans = new Transaction(date,amt,type);
+    //                                    trans.setID(saveTransaction(trans));
+                                        JOptionPane.showMessageDialog(null,
+                                                "Amount: "+trans.getAmount()
+                                                ,String.valueOf(trans.getDate())
+                                                ,JOptionPane.INFORMATION_MESSAGE);
+                                        try {
+                                            UserDao.updateBalanceDeposit(mUser.getAccountNumber()
+                                                    ,amt,"Savings");
+                                        } catch (SQLException ex) {
+                                            Logger.getLogger(VirtualATM.class.getName())
+                                                    .log(Level.SEVERE, null, ex);
+                                        }
+                                    }
+                                }else{
+                                    JOptionPane.showMessageDialog(null,"Please enter an amount");
+                                }
+                                cancel.doClick();
+                            }
+                        };
+                        ok.addActionListener(OkListener);
+                    }
+                });
+            }
+        });
+        
+//        depositSlot.addActionListener(new ActionListener(){
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//               if(jTextField1.getText().equals(""))
+//                   JOptionPane.showMessageDialog(null,"Please enter an amount");
+//               else{
+////                   updateBalanceWithdrawal(Long.parseLong(jTextField1.getText()));
+//               }
+//            }
+//        });
+    }
+    
+    // user pays the bill
+    private void setupBillPayment(){
+        
+        jButton4.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jLabel1.setText("Provider1");
+                jLabel2.setText("Provider2");
+                jLabel4.setVisible(false);
+                jLabel5.setVisible(false);
+                jLabel6.setVisible(false);
+                jLabel7.setVisible(false);
+                
+                jButton1.addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        jTextField1.setVisible(true);
+                        jTextField1.setText("");
+                        jLabel3.setVisible(true);
+                        jLabel3.setText("Utility number: ");
+                        
+                        ok.removeActionListener(OkListener);
+                        OkListener = new ActionListener(){
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                if(!jTextField1.getText().equals("")){
+                                    long utilityNumber = Long.parseLong(jTextField1.getText());
+                                    try {
+                                        if(UtilityDao.verifyUser(utilityNumber)){
+                                            jTextField1.setText("");
+                                            jLabel3.setText("Amount: ");
+                                            
+                                            ok.removeActionListener(OkListener);
+                                            OkListener = new ActionListener(){
+                                                @Override
+                                                public void actionPerformed(ActionEvent e) {
+                                                    String str = jTextField1.getText();
+                                                    if(!str.equals("")){
+                                                        try {
+                                                            UtilityDao.payBill(utilityNumber,
+                                                                    Integer.parseInt(str));
+                                                        } catch (SQLException ex) {
+                                                            Logger.getLogger(VirtualATM.class.getName())
+                                                                    .log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }else{
+                                                        try {
+                                                            UtilityDao.payBill(utilityNumber, 0);
+                                                        } catch (SQLException ex) {
+                                                            Logger.getLogger(VirtualATM.class.getName())
+                                                                    .log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    JOptionPane.showMessageDialog(
+                                                            null,
+                                                            "Amount: "+str,
+                                                            "Receipt",
+                                                            JOptionPane.INFORMATION_MESSAGE);
+                                                    cancel.doClick();
+                                                }
+                                            };
+                                            ok.addActionListener(OkListener);
+                                        }else
+                                            JOptionPane.showMessageDialog(null,"Wrong number");
+                                    } catch (SQLException ex) {
+                                        Logger.getLogger(VirtualATM.class.getName())
+                                                .log(Level.SEVERE, null, ex);
+                                    }
+                                }else
+                                    JOptionPane.showMessageDialog(null, "Please specify amount");
+                                
+                            }
+                        };
+                        ok.addActionListener(OkListener);
+                    }
+                });
+
+                jButton2.addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        jTextField1.setVisible(true);
+                        jTextField1.setText("");
+                        jLabel3.setVisible(true);
+                        jLabel3.setText("Utility number: ");
+                        
+                        ok.removeActionListener(OkListener);
+                        OkListener = new ActionListener(){
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                if(!jTextField1.getText().equals("")){
+                                    long utilityNumber = Long.parseLong(jTextField1.getText());
+                                    try {
+                                        if(UtilityDao.verifyUser(utilityNumber)){
+                                            jTextField1.setText("");
+                                            jLabel3.setText("Amount: ");
+                                            
+                                            ok.removeActionListener(OkListener);
+                                            OkListener = new ActionListener(){
+                                                @Override
+                                                public void actionPerformed(ActionEvent e) {
+                                                    String str = jTextField1.getText();
+                                                    if(!str.equals("")){
+                                                        try {
+                                                            UtilityDao.payBill(utilityNumber,
+                                                                    Integer.parseInt(str));
+                                                        } catch (SQLException ex) {
+                                                            Logger.getLogger(VirtualATM.class.getName())
+                                                                    .log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }else{
+                                                        try {
+                                                            UtilityDao.payBill(utilityNumber, 0);
+                                                        } catch (SQLException ex) {
+                                                            Logger.getLogger(VirtualATM.class.getName())
+                                                                    .log(Level.SEVERE, null, ex);
+                                                        }
+                                                    }
+                                                    JOptionPane.showMessageDialog(
+                                                            null,
+                                                            "Amount: "+str,
+                                                            "Receipt",
+                                                            JOptionPane.INFORMATION_MESSAGE);
+                                                    cancel.doClick();
+                                                }
+                                            };
+                                            ok.addActionListener(OkListener);
+                                        }else
+                                            JOptionPane.showMessageDialog(null,"Wrong number");
+                                    } catch (SQLException ex) {
+                                        Logger.getLogger(VirtualATM.class.getName())
+                                                .log(Level.SEVERE, null, ex);
+                                    }
+                                }else
+                                    JOptionPane.showMessageDialog(null, "Please specify amount");
+                                
+                            }
+                        };
+                        ok.addActionListener(OkListener);
                     }
                 });
             }
         });
     }
     
-    // user deposits money
-    private void setupDeposit(){
+    // user checks balance
+    private void setupBalanceCheck(){
         
-        jButton2.addActionListener(new ActionListener(){
+        jButton5.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                jLabel1.setVisible(false);
-                jLabel2.setVisible(false);
-                jLabel4.setVisible(false);
-                jLabel5.setVisible(false);
-                jLabel6.setVisible(false);
-                jLabel7.setVisible(false);
-                jTextField1.setText("");
-                jTextField1.setVisible(true);
-                jLabel3.setVisible(true);
-                jLabel3.setText("Enter the amount");
-            }
-        });
-        
-        depositSlot.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-               if(jTextField1.getText().equals(""))
-                   JOptionPane.showMessageDialog(null,"Please enter an amount");
-               else{
-                   updateBalance(Long.parseLong(jTextField1.getText()));
-               }
+                JOptionPane.showMessageDialog(null,"Balance: "+mUser.getBalance(),
+                        "Receipt",JOptionPane.INFORMATION_MESSAGE);
+                cancel.doClick();
             }
         });
     }
-    
-    private void updateBalance(Long amount){
-        
-        Connection con = null;
-        try {  
-            con = DriverManager.getConnection(  
-                    "jdbc:mysql://localhost:3306/virtualatm","root","password");
-            Statement stmt = con.createStatement();  
-            stmt.executeUpdate("update UserBankAccount set balance = balance + "+amount);
-            con.close();
-        } catch (SQLException ex) {
-            Logger.getLogger(VirtualATM.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-    }
-    
     
     // pop up window
     private JFrame getPopup(Transaction trans){
@@ -491,7 +766,7 @@ public class VirtualATM extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         jButton1 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
-        jButton3 = new javax.swing.JButton();
+        jButton4 = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         one = new javax.swing.JButton();
         two = new javax.swing.JButton();
@@ -503,9 +778,9 @@ public class VirtualATM extends javax.swing.JFrame {
         eight = new javax.swing.JButton();
         nine = new javax.swing.JButton();
         zero = new javax.swing.JButton();
-        jButton4 = new javax.swing.JButton();
         jButton5 = new javax.swing.JButton();
         jButton6 = new javax.swing.JButton();
+        jButton7 = new javax.swing.JButton();
         jPanel3 = new javax.swing.JPanel();
         cancel = new javax.swing.JButton();
         ok = new javax.swing.JButton();
@@ -587,7 +862,7 @@ public class VirtualATM extends javax.swing.JFrame {
 
         jButton2.setText("jButton2");
 
-        jButton3.setText("jButton3");
+        jButton4.setText("jButton3");
 
         one.setText("jButton7");
 
@@ -660,11 +935,11 @@ public class VirtualATM extends javax.swing.JFrame {
                 .addComponent(zero))
         );
 
-        jButton4.setText("jButton4");
+        jButton5.setText("jButton4");
 
-        jButton5.setText("jButton5");
+        jButton6.setText("jButton5");
 
-        jButton6.setText("jButton6");
+        jButton7.setText("jButton6");
 
         cancel.setText("jButton17");
 
@@ -711,8 +986,8 @@ public class VirtualATM extends javax.swing.JFrame {
                         .addContainerGap()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(layout.createSequentialGroup()
@@ -720,8 +995,8 @@ public class VirtualATM extends javax.swing.JFrame {
                                 .addGap(18, 18, 18)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                            .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                    .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addComponent(jButton7, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(122, 122, 122)
                         .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -737,9 +1012,9 @@ public class VirtualATM extends javax.swing.JFrame {
                         .addGap(103, 103, 103)
                         .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(40, 40, 40)
-                        .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(47, 47, 47)
-                        .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(48, 48, 48)
                         .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -747,9 +1022,9 @@ public class VirtualATM extends javax.swing.JFrame {
                         .addGap(99, 99, 99)
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(49, 49, 49)
-                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(35, 35, 35)
-                        .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jButton7, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -806,10 +1081,10 @@ public class VirtualATM extends javax.swing.JFrame {
     private javax.swing.JButton insertCard;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton6;
+    private javax.swing.JButton jButton7;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
