@@ -348,6 +348,9 @@
       <Properties>
         <Property name="text" type="java.lang.String" value="jButton4"/>
       </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton5ActionPerformed"/>
+      </Events>
     </Component>
     <Component class="javax.swing.JButton" name="jButton6">
       <Properties>
@@ -367,7 +370,7 @@
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace min="-2" pref="29" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="1" attributes="0">
-                      <Component id="depositSlot" min="-2" pref="81" max="-2" attributes="0"/>
+                      <Component id="Admin" min="-2" pref="81" max="-2" attributes="0"/>
                       <Component id="insertCard" min="-2" pref="100" max="-2" attributes="0"/>
                       <Component id="ok" min="-2" pref="81" max="-2" attributes="0"/>
                       <Component id="cancel" min="-2" pref="81" max="-2" attributes="0"/>
@@ -386,7 +389,7 @@
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="insertCard" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
-                  <Component id="depositSlot" min="-2" max="-2" attributes="0"/>
+                  <Component id="Admin" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="32767" attributes="0"/>
               </Group>
           </Group>
@@ -408,7 +411,7 @@
             <Property name="text" type="java.lang.String" value="jButton19"/>
           </Properties>
         </Component>
-        <Component class="javax.swing.JButton" name="depositSlot">
+        <Component class="javax.swing.JButton" name="Admin">
           <Properties>
             <Property name="text" type="java.lang.String" value="jButton20"/>
           </Properties>

@@ -98,4 +98,62 @@ public class UserDao {
         statement.executeUpdate(updateQuery);
         conn.close();
     }
+    
+    /**
+     * Update the user PIN
+     * @param accountNumber
+     * @param newPin
+     * @throws SQLException 
+     */
+    public static void updateUserPin(long accountNumber,int newPin) throws SQLException{
+        Connection conn = DriverManager.getConnection(
+                "jdbc:mysql://localhost:3306/virtualatm","root","password");
+        Statement stmt = conn.createStatement();
+        stmt.executeUpdate("update UserBankAccount set"
+                        +" user_pin = "+newPin
+                        +" where account_number = "+accountNumber);
+        conn.close();
+    }
+    
+    /**
+     * Validate the admin id
+     * @param userId
+     * @return
+     * @throws SQLException 
+     */
+    public static boolean validateAdminID(String userId) throws SQLException{
+        boolean result = false;
+        Connection conn = DriverManager.getConnection(
+                "jdbc:mysql://localhost:3306/virtualatm","root","password");
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select * from AdminBankAccount"
+                        +" where user_id = "+userId);
+        if(rs.next())
+            result = rs.getMetaData().getColumnCount() > 0;
+            
+        conn.close();
+        return result;
+    }
+    
+    /**
+     * Validate admin password
+     * @param password
+     * @return
+     * @throws SQLException 
+     */
+    public static boolean validateAdminPassword(String password) throws SQLException {
+        boolean result = false;
+        
+        Connection conn = DriverManager.getConnection(
+                "jdbc:mysql://localhost:3306/virtualatm","root","password");
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select * from AdminBankAccount"
+                        +" where password = "+password);
+        if(rs.next())
+            result = rs.getMetaData().getColumnCount() > 0;
+            
+        conn.close();
+        
+        return result;
+    }
 }

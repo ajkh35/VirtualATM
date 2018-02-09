@@ -41,6 +41,9 @@ public class VirtualATM extends javax.swing.JFrame{
         // setup card swipe
         setupUserLogin();
         
+        // setup admin login
+        setupAdminLogin();
+        
         // Cancel press listener
         cancel.addActionListener(new ActionListener(){
             @Override
@@ -92,17 +95,85 @@ public class VirtualATM extends javax.swing.JFrame{
             public void actionPerformed(ActionEvent e) {
                 String str = jTextField1.getText();
                 
-                if(verifyPin(str)){
+                if(!str.equals("")){
+                    if(verifyPin(str)){
                     System.out.println("great");
                     loadMainMenu();
-                }else{
-                    System.out.println("not so great");
-                    JOptionPane.showMessageDialog(null, "Invalid PIN");
-                    cancel.doClick();
-                }
+                    }else{
+                        System.out.println("not so great");
+                        JOptionPane.showMessageDialog(null, "Invalid PIN");
+                        cancel.doClick();
+                    }
+                }else
+                    JOptionPane.showMessageDialog(null,"Field can't be blank");
             }
         };
         ok.addActionListener(OkListener);
+    }
+    
+    private void setupAdminLogin(){
+        
+        Admin.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jLabel1.setVisible(false);
+                jLabel2.setVisible(false);
+                jLabel4.setVisible(false);
+                jLabel5.setVisible(false);
+                jLabel6.setVisible(false);
+                jLabel7.setVisible(false);
+                welcome.setVisible(false);
+                jLabel3.setVisible(true);
+                jTextField1.setVisible(true);
+                jLabel3.setText("Used Id: ");
+                jTextField1.setText("");
+                
+                ok.removeActionListener(OkListener);
+                OkListener = new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        String str = jTextField1.getText();
+                        if(!str.equals("")){
+                            try {
+                                if(UserDao.validateAdminID(str)){
+                                    jTextField1.setText("");
+                                    jLabel3.setText("Password: ");
+                                    
+                                    ok.removeActionListener(OkListener);
+                                    OkListener = new ActionListener(){
+                                        @Override
+                                        public void actionPerformed(ActionEvent e) {
+                                            String str = jTextField1.getText();
+                                            if(!str.equals("")){
+                                                try {
+                                                    if(UserDao.validateAdminPassword(str)){
+                                                        loadAdminMenu();
+                                                    }else
+                                                        JOptionPane.showMessageDialog(null
+                                                                ,"Wrong password");
+                                                } catch (SQLException ex) {
+                                                    Logger.getLogger(VirtualATM.class.getName())
+                                                            .log(Level.SEVERE, null, ex);
+                                                }
+                                            }else
+                                                JOptionPane.showMessageDialog(null
+                                                        ,"Field can't be blank");
+                                        }
+                                    };
+                                    ok.addActionListener(OkListener);
+                                }else
+                                    JOptionPane.showMessageDialog(null,"Wrong user id");
+                            } catch (SQLException ex) {
+                                Logger.getLogger(VirtualATM.class.getName())
+                                        .log(Level.SEVERE, null, ex);
+                            }
+                        }else
+                            JOptionPane.showMessageDialog(null,"Field can't be blank");
+                    }
+                };
+                ok.addActionListener(OkListener);
+            }
+        });
     }
     
     // Verification of ATM PIN
@@ -159,8 +230,8 @@ public class VirtualATM extends javax.swing.JFrame{
         ok.setBackground(Color.WHITE);
         insertCard.setText("Insert Card");
         insertCard.setBackground(Color.WHITE);
-        depositSlot.setText("Deposit");
-        depositSlot.setBackground(Color.WHITE);
+        Admin.setText("Admin");
+        Admin.setBackground(Color.WHITE);
         
         // keypad
         one.setText("1");
@@ -326,6 +397,23 @@ public class VirtualATM extends javax.swing.JFrame{
         
         //User checks balance
         setupBalanceCheck();
+        
+        //User changes PIN
+        setupChangePin();
+        
+        // User selects FastCash
+        setupFastcash();
+    }
+    
+    // load up the admin menu
+    private void loadAdminMenu(){
+        
+        jLabel3.setVisible(false);
+        jTextField1.setVisible(false);
+        jLabel1.setVisible(true);
+        jLabel2.setVisible(true);
+        jLabel1.setText("Recash");
+        jLabel2.setText("Change capacity");
     }
     
     // user withdraws money
@@ -710,39 +798,166 @@ public class VirtualATM extends javax.swing.JFrame{
         });
     }
     
-    // pop up window
-    private JFrame getPopup(Transaction trans){
-        JFrame frame = new JFrame();
-        frame.setSize(200,200);
+    // user changes pin
+    private void setupChangePin(){
         
-        JLabel amount = new JLabel();
-        amount.setText(String.valueOf(trans.getAmount()));
-        JLabel date = new JLabel();
-        date.setText(String.valueOf(trans.getDate()));
-        JLabel id = new JLabel();
-        id.setText(String.valueOf(trans.getID()));
-        frame.add(amount);
-        frame.add(date);
-        frame.add(id);
-        return frame;
+        jButton6.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jLabel1.setVisible(false);
+                jLabel2.setVisible(false);
+                jLabel4.setVisible(false);
+                jLabel5.setVisible(false);
+                jLabel6.setVisible(false);
+                jLabel7.setVisible(false);
+                jLabel3.setVisible(true);
+                jTextField1.setVisible(true);
+                jTextField1.setText("");
+                jLabel3.setText("Enter new PIN");
+                
+                ok.removeActionListener(OkListener);
+                OkListener = new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        String pin = jTextField1.getText();
+                        if(!pin.equals("")){
+                            jLabel3.setText("Enter PIN again");
+                            jTextField1.setText("");
+                            
+                            ok.removeActionListener(OkListener);
+                            OkListener = new ActionListener(){
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    String newPin = jTextField1.getText();
+                                    if(!newPin.equals("")){
+                                        try {
+                                            UserDao.updateUserPin(mUser.getAccountNumber()
+                                                    ,Integer.parseInt(newPin));
+                                        } catch (SQLException ex) {
+                                            Logger.getLogger(VirtualATM.class.getName()).
+                                                    log(Level.SEVERE, null, ex);
+                                        }
+                                    }else
+                                        JOptionPane.showMessageDialog(null,"PIN can't be null");
+                                    
+                                    cancel.doClick();
+                                }
+                            };
+                            ok.addActionListener(OkListener);
+                        }else
+                            JOptionPane.showMessageDialog(null,"Please enter an amount");
+                    }
+                };
+                ok.addActionListener(OkListener);
+            }
+        });
     }
     
-    // save transaction to database
-    private int saveTransaction(Transaction trans){
-        int id=0;
-        Connection con = null;
-        try {  
-            con = DriverManager.getConnection(  
-                    "jdbc:mysql://localhost:3306/virtualatm","root","password");
-            Statement stmt = con.createStatement();  
-            id = stmt.executeUpdate("insert into Transaction values("
-                    +trans.getDate()+","+trans.getAmount()+","+trans.getType()+")");  
-            con.close();
-        } catch (SQLException ex) {
-            Logger.getLogger(VirtualATM.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    // user selects fast cash
+    private void setupFastcash(){
         
-        return id;
+        jButton7.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                jLabel1.setText("20 euro");
+                jLabel2.setText("50 euro");
+                jLabel4.setText("100 euro");
+                jLabel5.setText("200 euro");
+                jLabel6.setText("250 euro");
+                jLabel7.setText("300 euro");
+                
+                jButton1.addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        try {
+                            UserDao.updateBalanceWithdrawal(mUser.getAccountNumber(),
+                                    20, "Current");
+                        } catch (SQLException ex) {
+                            Logger.getLogger(VirtualATM.class.getName()).
+                                    log(Level.SEVERE, null, ex);
+                        }
+                        JOptionPane.showMessageDialog(null,"Amount: 20 euro"
+                                ,"Receipt",JOptionPane.INFORMATION_MESSAGE);
+                        cancel.doClick();
+                    }
+                });
+                jButton2.addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        try {
+                            UserDao.updateBalanceWithdrawal(mUser.getAccountNumber(),
+                                    50, "Current");
+                        } catch (SQLException ex) {
+                            Logger.getLogger(VirtualATM.class.getName()).
+                                    log(Level.SEVERE, null, ex);
+                        }
+                        JOptionPane.showMessageDialog(null,"Amount: 50 euro"
+                                ,"Receipt",JOptionPane.INFORMATION_MESSAGE);
+                        cancel.doClick();
+                    }
+                });
+                jButton4.addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        try {
+                            UserDao.updateBalanceWithdrawal(mUser.getAccountNumber(),
+                                    100, "Current");
+                        } catch (SQLException ex) {
+                            Logger.getLogger(VirtualATM.class.getName()).
+                                    log(Level.SEVERE, null, ex);
+                        }
+                        JOptionPane.showMessageDialog(null,"Amount: 100 euro"
+                                ,"Receipt",JOptionPane.INFORMATION_MESSAGE);
+                        cancel.doClick();
+                    }
+                });
+                jButton5.addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        try {
+                            UserDao.updateBalanceWithdrawal(mUser.getAccountNumber(),
+                                    200, "Current");
+                        } catch (SQLException ex) {
+                            Logger.getLogger(VirtualATM.class.getName()).
+                                    log(Level.SEVERE, null, ex);
+                        }
+                        JOptionPane.showMessageDialog(null,"Amount: 200 euro"
+                                ,"Receipt",JOptionPane.INFORMATION_MESSAGE);
+                        cancel.doClick();
+                    }
+                });
+                jButton6.addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        try {
+                            UserDao.updateBalanceWithdrawal(mUser.getAccountNumber(),
+                                    250, "Current");
+                        } catch (SQLException ex) {
+                            Logger.getLogger(VirtualATM.class.getName()).
+                                    log(Level.SEVERE, null, ex);
+                        }
+                        JOptionPane.showMessageDialog(null,"Amount: 250 euro"
+                                ,"Receipt",JOptionPane.INFORMATION_MESSAGE);
+                        cancel.doClick();
+                    }
+                });
+                jButton7.addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        try {
+                            UserDao.updateBalanceWithdrawal(mUser.getAccountNumber(),
+                                    300, "Current");
+                        } catch (SQLException ex) {
+                            Logger.getLogger(VirtualATM.class.getName()).
+                                    log(Level.SEVERE, null, ex);
+                        }
+                        JOptionPane.showMessageDialog(null,"Amount: 300 euro"
+                                ,"Receipt",JOptionPane.INFORMATION_MESSAGE);
+                        cancel.doClick();
+                    }
+                });
+            }
+        });
     }
     
     /**
@@ -785,7 +1000,7 @@ public class VirtualATM extends javax.swing.JFrame{
         cancel = new javax.swing.JButton();
         ok = new javax.swing.JButton();
         insertCard = new javax.swing.JButton();
-        depositSlot = new javax.swing.JButton();
+        Admin = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setPreferredSize(new java.awt.Dimension(640, 600));
@@ -936,6 +1151,11 @@ public class VirtualATM extends javax.swing.JFrame{
         );
 
         jButton5.setText("jButton4");
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton5ActionPerformed(evt);
+            }
+        });
 
         jButton6.setText("jButton5");
 
@@ -947,7 +1167,7 @@ public class VirtualATM extends javax.swing.JFrame{
 
         insertCard.setText("jButton19");
 
-        depositSlot.setText("jButton20");
+        Admin.setText("jButton20");
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
@@ -956,7 +1176,7 @@ public class VirtualATM extends javax.swing.JFrame{
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addGap(29, 29, 29)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(depositSlot, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(Admin, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(insertCard, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(ok, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(cancel, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -972,7 +1192,7 @@ public class VirtualATM extends javax.swing.JFrame{
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(insertCard)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(depositSlot)
+                .addComponent(Admin)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -1037,6 +1257,10 @@ public class VirtualATM extends javax.swing.JFrame{
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton5ActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -1073,8 +1297,8 @@ public class VirtualATM extends javax.swing.JFrame{
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton Admin;
     private javax.swing.JButton cancel;
-    private javax.swing.JButton depositSlot;
     private javax.swing.JButton eight;
     private javax.swing.JButton five;
     private javax.swing.JButton four;
